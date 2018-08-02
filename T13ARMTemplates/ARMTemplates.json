@@ -1,0 +1,355 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "automationRegistrationKey": {
+      "type": "securestring"
+    },
+    "automationRegistrationUrl": {
+      "type": "string"
+    },
+    "adminUser": {
+      "type": "string"
+    },
+    "adminPass": {
+      "type": "securestring"
+    }
+  },
+  "variables": {
+
+    "applicationName": "azdsc",
+
+    "storageAccountName": "[concat(resourceGroup().Name,variables('applicationName'),'stor')]",
+
+    "OperatingSystem": {
+      "windows": {
+        "imageSku": "2016-Datacenter",
+        "imagePublisher": "MicrosoftWindowsServer",
+        "imageOffer": "WindowsServer"
+      },
+      "windowsCore": {
+        "imageSku": "2016-Datacenter-Server-Core",
+        "imagePublisher": "MicrosoftWindowsServer",
+        "imageOffer": "WindowsServer"
+      },
+      "sqlWindows": {
+        "imageSku": "Enterprise",
+        "imagePublisher": "MicrosoftSQLServer",
+        "imageOffer": "SQL2016SP1-WS2016"
+      },
+      "suseLinux": {
+        "imageSku": "12-SP1",
+        "imagePublisher": "SUSE",
+        "imageOffer": "SLES"
+      },
+      "ubuntuLinux": {
+        "imageSku": "14.04.3-LTS",
+        "imagePublisher": "Canonical",
+        "imageOffer": "UbuntuServer"
+      }
+    },
+
+    "dscLocalConfigurationManager": {
+      "rebootNodeIfNeeded": true,
+      "configurationMode": "ApplyAndAutocorrect",
+      "actionAfterReboot": "ContinueConfiguration",
+      "allowModuleOverwrite": true,
+      "dscExtensionVersion": "2.72",
+      "modulesURI": "https://eus2oaasibizamarketprod1.blob.core.windows.net/automationdscpreview/RegistrationMetaConfigV2.zip",
+      "configurationFunction": "RegistrationMetaConfigV2.ps1\\RegistrationMetaConfigV2"
+    },
+
+    "VMConfig": {
+      "DSCTarget": {
+        "instanceCount": 3,
+        "VMSize": "Basic_A2",
+        "Name": "[concat(variables('applicationName'),'tgt')]",
+        "configurationName": "Techmentor2018Config.DSCTarget"
+      }
+    },
+
+    "VirtualNetworkName": "[concat(variables('applicationName'),'vnet')]",
+    "VNetPrefix": "10.1.0.0/16",
+    "VNetSubnet1Name": "[concat(variables('applicationName'),'mgmtsubnet')]",
+    "VNetSubnet1Prefix": "10.1.0.0/24",
+    "VNetSubnet1ID": "[concat(resourceID('Microsoft.Network/virtualNetworks',variables('VirtualNetworkName')),'/subnets/',variables('vNetSubnet1Name'))]",
+    "VNetSubnet2Name": "[concat(variables('applicationName'),'applicationsubnet')]",
+    "VNetSubnet2Prefix": "10.1.1.0/24",
+    "VNetSubnet2ID": "[concat(resourceID('Microsoft.Network/virtualNetworks',variables('VirtualNetworkName')),'/subnets/',variables('VNetSubnet2Name'))]"
+
+
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2015-06-15",
+      "location": "[resourceGroup().Location]",
+      "name": "[variables('storageAccountName')]",
+      "properties": {
+        "accountType": "Standard_LRS"
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2015-05-01-preview",
+      "location": "[resourceGroup().Location]",
+      "name": "[variables('VirtualNetworkName')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts',variables('storageAccountName'))]"
+      ],
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('VNetPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('vNetSubnet1Name')]",
+            "properties": {
+              "addressPrefix": "[variables('VNetSubnet1Prefix')]"
+            }
+          },
+          {
+            "name": "[variables('VNetSubnet2Name')]",
+            "properties": {
+              "addressPrefix": "[variables('VNetSubnet2Prefix')]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2015-05-01-preview",
+      "location": "[resourceGroup().location]",
+      "name": "[concat(variables('VMConfig').DSCTarget.Name,'nsg')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "AzureDSCRDP_Inbound",
+            "properties": {
+              "description": "Allow RDP Access.",
+              "access": "Allow",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "3389",
+              "direction": "Inbound",
+              "priority": 200,
+              "protocol": "*",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2015-05-01-preview",
+      "location": "[resourceGroup().location]",
+      "copy": {
+        "count": "[variables('VMConfig').DSCTarget.instanceCount]",
+        "name": "sqlServerpubIPLoop"
+      },
+      "name": "[concat(variables('VMConfig').DSCTarget.Name,0,copyIndex(1),'pubip')]",
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic",
+        "dnsSettings": {
+          "domainNameLabel": "[concat(resourceGroup().name,variables('VMConfig').DSCTarget.Name,0,copyIndex(1),'pubip')]"
+        }
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/networksecuritygroups/',variables('VMConfig').DSCTarget.Name,'nsg')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2015-05-01-preview",
+      "location": "[resourceGroup().location]",
+      "copy": {
+        "count": "[variables('VMConfig').DSCTarget.instanceCount]",
+        "name": "DSCTargetnifLoop"
+      },
+      "name": "[concat(variables('VMConfig').DSCTarget.Name,0,copyIndex(1),'nif')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks',variables('VirtualNetworkName'))]",
+        "[resourceId('Microsoft.Network/publicIPAddresses',concat(variables('VMConfig').DSCTarget.Name,0,copyIndex(1),'pubip'))]"
+      ],
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "[concat(variables('VMConfig').DSCTarget.Name,0,copyIndex(1),'ipconfig')]",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('VNetSubnet2ID')]"
+              },
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses',concat(variables('VMConfig').DSCTarget.Name,0,copyIndex(1),'pubip'))]"
+              }
+            }
+          }
+        ],
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups',concat(variables('VMConfig').DSCTarget.Name,'nsg'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/availabilitySets",
+      "apiVersion": "2015-06-15",
+      "location": "[resourceGroup().Location]",
+      "name": "[concat(variables('VMConfig').DSCTarget.Name,'avset')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks',variables('VirtualNetworkName'))]"
+      ],
+      "properties": {
+        "platformFaultDomainCount": 3,
+        "platformUpdateDomainCount": 3
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2015-06-15",
+      "location": "[resourceGroup().Location]",
+      "copy": {
+        "count": "[variables('VMConfig').DSCTarget.instanceCount]",
+        "name": "DSCTargetvmLoop"
+      },
+      "name": "[concat(variables('VMConfig').DSCTarget.Name,0,copyIndex(1))]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks',variables('VirtualNetworkName'))]",
+        "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('VMConfig').DSCTarget.Name,0,copyIndex(1),'nif'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts',variables('storageAccountName'))]",
+        "[resourceId('Microsoft.Compute/availabilitySets', concat(variables('VMConfig').DSCTarget.Name,'avset'))]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[variables('VMConfig').DSCTarget.VMSize]"
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('VMConfig').DSCTarget.Name,0,copyIndex(1),'nif'))]"
+            }
+          ]
+        },
+        "storageProfile": {
+          "osDisk": {
+            "createOption": "FromImage",
+            "name": "[concat(variables('VMConfig').DSCTarget.Name,'0',copyIndex(1),'osDisk')]",
+            "vhd": {
+              "uri": "[concat('http://',variables('storageAccountName'),'.blob.core.windows.net', '/vhds/',variables('VMConfig').DSCTarget.Name,'0',copyIndex(1),'osDisk.vhd')]"
+            },
+            "caching": "ReadWrite"
+          },
+          "dataDisks": [
+            {
+              "createOption": "Empty",
+              "lun": 0,
+              "name": "[concat(variables('VMConfig').DSCTarget.Name,'0',copyIndex(1),'dataDisk')]",
+              "vhd": {
+                "uri": "[concat('http://',variables('storageAccountName'),'.blob.core.windows.net', '/vhds/',variables('VMConfig').DSCTarget.Name,'0',copyIndex(1),'dataDisk.vhd')]"
+              },
+              "caching": "None",
+              "diskSizeGB": "128"
+            }
+          ],
+          "imageReference": {
+            "offer": "[variables('OperatingSystem').windows.imageOffer]",
+            "publisher": "[variables('OperatingSystem').windows.imagePublisher]",
+            "sku": "[variables('OperatingSystem').windows.imageSku]",
+            "version": "latest"
+          }
+        },
+        "osProfile": {
+          "adminPassword": "[parameters('adminPass')]",
+          "adminUsername": "[parameters('adminUser')]",
+          "computerName": "[concat(variables('VMConfig').DSCTarget.Name,'0',copyIndex(1))]",
+          "windowsConfiguration": {
+            "provisionVMAgent": true
+          }
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": true,
+            "storageUri": "[concat('http://',variables('storageAccountName'),'.blob.core.windows.net')]"
+          }
+        },
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', concat(variables('VMConfig').DSCTarget.Name,'avset'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2017-12-01",
+      "location": "[resourceGroup().location]",
+      "copy": {
+        "count": "[variables('VMConfig').DSCTarget.instanceCount]",
+        "name": "DSCBaseConfig"
+      },
+      "name": "[concat(variables('VMConfig').DSCTarget.Name,0,copyIndex(1),'/DSCTargetServerBaseDSC')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines',concat(variables('VMConfig').DSCTarget.Name,0,copyIndex(1)))]"
+      ],
+      "properties": {
+        "type": "DSC",
+        "publisher": "Microsoft.Powershell",
+        "typeHandlerVersion": "[variables('dscLocalConfigurationManager').dscExtensionVersion]",
+        "settings": {
+          "modulesUrl": "[variables('dscLocalConfigurationManager').modulesURI]",
+          "configurationFunction": "[variables('dscLocalConfigurationManager').configurationFunction]",
+          "Properties": [
+            {
+              "Name": "RegistrationKey",
+              "Value": {
+                "UserName": "PLACEHOLDER_DONOTUSE",
+                "Password": "PrivateSettingsRef:registrationKeyPrivate"
+              },
+              "TypeName": "System.Management.Automation.PSCredential"
+            },
+            {
+              "Name": "RegistrationUrl",
+              "Value": "[parameters('automationRegistrationUrl')]",
+              "TypeName": "System.String"
+            },
+            {
+              "Name": "NodeConfigurationName",
+              "Value": "[variables('VMConfig').DSCTarget.configurationName]",
+              "TypeName": "System.String"
+            },
+            {
+              "Name": "ConfigurationMode",
+              "Value": "[variables('dscLocalConfigurationManager').configurationMode]",
+              "TypeName": "System.String"
+            },
+            {
+              "Name": "RebootNodeIfNeeded",
+              "Value": "[variables('dscLocalConfigurationManager').rebootNodeIfNeeded]",
+              "TypeName": "System.Boolean"
+            },
+            {
+              "Name": "ActionAfterReboot",
+              "Value": "[variables('dscLocalConfigurationManager').actionAfterReboot]",
+              "TypeName": "System.String"
+            },
+            {
+              "Name": "AllowModuleOverwrite",
+              "Value": "[variables('dscLocalConfigurationManager').allowModuleOverwrite]",
+              "TypeName": "System.Boolean"
+            }
+          ],
+          "wmfVersion": "5.1"
+        },
+        "autoUpgradeMinorVersion": true,
+        "protectedSettings": {
+          "Items": {
+            "registrationKeyPrivate": "[parameters('automationRegistrationKey')]"
+          }
+        }
+      }
+
+    }
+  ]
+}
