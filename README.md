@@ -1,6 +1,6 @@
 ## Will Anderson
 ### Chief Executive Officer
-### The DevOps Collective
+The DevOps Collective
 
 ### PowerShell and DevOps
 ## T13 Conceptualizing Azure Resource Manager Templates
