@@ -2,6 +2,21 @@
 ### Chief Executive Officer
 The DevOps Collective
 
+# Sessions
+
+### Infrastructure, Workshops
+## M04 Workshop: Master PowerShell Tricks for Windows Server 2016 and Windows 10
+### August 6th, 2018 2:00pm - 5:00pm
+### Level: Introductory Intermediate
+
+Tens of thousands of people have picked up their copies of Master PowerShell Tricks volumes 1, 2, and 3. They're loving the knowledge and using the skills shared in this popular book series to further their careers and provide more value to their employers. Come join the authors and enjoy the hands-on, live and in-person version of these books, and jump start your PowerShell learning journey or take your skills to the next level.
+
+You will learn:
+
+- Assorted PowerShell tips
+- PowerShell gotchas
+- PowerShell secrets
+
 ### PowerShell and DevOps
 ## T13 Conceptualizing Azure Resource Manager Templates
 ### August 7th, 2018 2:45pm - 4:00pm
