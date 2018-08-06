@@ -2,6 +2,8 @@
 ### Chief Executive Officer
 The DevOps Collective
 
+# Sessions
+
 ### Infrastructure, Workshops
 ## M04 Workshop: Master PowerShell Tricks for Windows Server 2016 and Windows 10
 ### August 6th, 2018 2:00pm - 5:00pm
