@@ -16,7 +16,7 @@ Configuration LWINBaseConfig {
     $WireDataLocalPath = "C:\Installers\OMS\InstallDependencyAgent-Windows.exe"
     $WireDataArgs = '/S /RebootMode:rebootIfNeeded'
 
-
+    
 
         WindowsFeature RSAT
         {

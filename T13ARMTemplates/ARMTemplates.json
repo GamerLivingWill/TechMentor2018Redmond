@@ -351,5 +351,11 @@
       }
 
     }
-  ]
+  ],
+  "outputs": {
+    "pwaPublicIp": {
+      "type": "string",
+      "value": "[reference(concat(variables('VMConfig').DSCTarget.Name,01,'pubip')).dnsSettings.fqdn]"
+    }
+  }
 }

@@ -1,0 +1,68 @@
+/*
+@TargetNode='localhost'
+@GeneratedBy=willa
+@GenerationDate=02/24/2018 10:55:45
+@GenerationHost=DESKTOP-049IE09
+*/
+
+instance of MSFT_WebDownloadManager as $MSFT_WebDownloadManager1ref
+{
+SourceInfo = "::68::9::ConfigurationRepositoryWeb";
+ ServerURL = "https://eus2-agentservice-prod-1.azure-automation.net/accounts/e0a66fa1-071f-41c1-9521-960a9b24d0da";
+ ResourceID = "[ConfigurationRepositoryWeb]AzureAutomationDSC";
+ RegistrationKey = "WwFvpod50sWOp50u74NWrrBk9vABXKEa2qc6092JVUnqIOQloRRpHlI5K4XT2hH7tVDvtFptfmAuI+6lwb//cQ==";
+ ConfigurationNames = {
+    "SurfaceBookConfig.localhost"
+};
+
+};
+
+instance of MSFT_WebResourceManager as $MSFT_WebResourceManager1ref
+{
+SourceInfo = "::75::13::ResourceRepositoryWeb";
+ ServerURL = "https://eus2-agentservice-prod-1.azure-automation.net/accounts/e0a66fa1-071f-41c1-9521-960a9b24d0da";
+ ResourceID = "[ResourceRepositoryWeb]AzureAutomationDSC";
+ RegistrationKey = "WwFvpod50sWOp50u74NWrrBk9vABXKEa2qc6092JVUnqIOQloRRpHlI5K4XT2hH7tVDvtFptfmAuI+6lwb//cQ==";
+
+};
+
+instance of MSFT_WebReportManager as $MSFT_WebReportManager1ref
+{
+SourceInfo = "::82::9::ReportServerWeb";
+ ServerURL = "https://eus2-agentservice-prod-1.azure-automation.net/accounts/e0a66fa1-071f-41c1-9521-960a9b24d0da";
+ ResourceID = "[ReportServerWeb]AzureAutomationDSC";
+ RegistrationKey = "WwFvpod50sWOp50u74NWrrBk9vABXKEa2qc6092JVUnqIOQloRRpHlI5K4XT2hH7tVDvtFptfmAuI+6lwb//cQ==";
+
+};
+
+instance of MSFT_DSCMetaConfiguration as $MSFT_DSCMetaConfiguration1ref
+{
+RefreshMode = "Pull";
+ AllowModuleOverwrite = False;
+ ActionAfterReboot = "ContinueConfiguration";
+ RefreshFrequencyMins = 30;
+ RebootNodeIfNeeded = True;
+ ConfigurationModeFrequencyMins = 15;
+ ConfigurationMode = "ApplyAndAutoCorrect";
+
+  ResourceModuleManagers = {
+  $MSFT_WebResourceManager1ref  
+ };
+  ReportManagers = {
+  $MSFT_WebReportManager1ref  
+ };
+  ConfigurationDownloadManagers = {
+  $MSFT_WebDownloadManager1ref  
+ };
+};
+
+instance of OMI_ConfigurationDocument
+{
+ Version="2.0.0";
+ MinimumCompatibleVersion = "2.0.0";
+ CompatibleVersionAdditionalProperties= { "MSFT_DSCMetaConfiguration:StatusRetentionTimeInDays" };
+ Author="willa";
+ GenerationDate="02/24/2018 10:55:45";
+ GenerationHost="DESKTOP-049IE09";
+ Name="DscMetaConfigs";
+};
