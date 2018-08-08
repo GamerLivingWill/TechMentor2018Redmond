@@ -1,14 +1,53 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-  "contentVersion": "1.0.0.0",
+  "contentVersion": "1.0.0.1",
   "parameters": {
-
+    "environment": {
+      "type": "string",
+      "allowedValues": [
+        "prod",
+        "qa",
+        "dev"
+      ],
+      "defaultValue": "dev"
+    },
+    "location": {
+      "type": "string",
+      "allowedValues": [
+        "westus",
+        "eastus"
+      ]
+    }
   },
   "variables": {
-
+    "baseName": "tm2018",
+    "storageAccountSize": {
+      "prod": {
+        "storSize": "Standard_ZRS",
+        "storName": "[concat(variables('baseName'),parameters('environment'),'prm',resourceGroup().location)]"
+      },
+      "qa": {
+        "storSize": "Premium_LRS",
+        "storName": "[concat(variables('baseName'),parameters('environment'),'prm',resourceGroup().location)]"
+      },
+      "dev": {
+        "storSize": "Standard_LRS",
+        "storName": "[concat(variables('baseName'),parameters('environment'),'prm',resourceGroup().location)]"
+      }
+    },
+    "storAccountReference": "[variables('storageAccountSize')[parameters('environment')]]"
   },
   "resources": [
-
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2018-03-01-preview",
+      "kind": "StorageV2",
+      "location": "[resourceGroup().location]",
+      "name": "[variables('storAccountReference').storName]",
+      "sku": {
+        "name": "[variables('storAccountReference').storSize]"
+      }
+    }
   ],
   "outputs": {
 

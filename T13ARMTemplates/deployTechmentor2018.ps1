@@ -3,8 +3,8 @@ $Subscription = 'LastWordInNerd'
 $Sub = Get-AzureRmSubscription -SubscriptionName $Subscription
 Set-AzureRmContext -SubscriptionName $Sub.Name
 
-$TemplateLoc = 'C:\Users\willa\Documents\GitHub\TechMentor2018Redmond\T13ARMTemplates\ARMTemplates.json'
-$BaseName = 'tm2018'
+$TemplateLoc = 'C:\Users\willa\Documents\GitHub\TechMentor2018Redmond\T13ARMTemplates\ARMTemplatesDemo.json'
+$BaseName = 'tm2018psh'
 $Location = 'westus'
 $AutoAcctName = 'mms-eus'
 $AutoAcctResGrpName = 'testautoaccteastus2'
@@ -18,12 +18,12 @@ $Secret = Get-AzureKeyVaultSecret -VaultName 'testkeyvautleus2' -Name 'lwinadmin
 
 $DeploymentTemplateParams = @{
 
-    #'location' = $ResGrp.location
-    #'environment' = 'np'
-    'automationRegistrationUrl' = $AutoAcctReg.Endpoint
-    'automationRegistrationKey' = $AutoAcctReg.PrimaryKey
-    'adminPass' = $Secret.SecretValue
-    'adminUser' = $Secret.Name
+    'location' = $ResGrp.location
+    'environment' = 'qa'
+    #'automationRegistrationUrl' = $AutoAcctReg.Endpoint
+    #'automationRegistrationKey' = $AutoAcctReg.PrimaryKey
+    #'adminPass' = $Secret.SecretValue
+    #'adminUser' = $Secret.Name
 
 }
 
